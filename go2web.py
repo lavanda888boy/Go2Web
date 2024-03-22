@@ -1,7 +1,9 @@
 import argparse
 from urllib.parse import urlparse
+from bs4 import BeautifulSoup
 import socket
 import ssl
+import re
 
 HTTPS_PORT = 443
 HTTP_PORT = 80
@@ -35,7 +37,21 @@ def send_http_get_request(host, port, path):
         response += data
 
     sock.close()
-    return response.decode()
+    
+    headers, body = response.split(b"\r\n\r\n", 1)
+    headers_str = headers.decode('utf-8')
+    body_str = body.decode('utf-8')
+
+    return headers_str, body_str
+
+
+def parse_html_body(html_body):
+    soup = BeautifulSoup(html_body, 'html.parser')
+
+    body_text = soup.body.get_text(separator=' ')
+    body_text = re.sub(r'\s+', ' ', body_text)
+
+    return body_text.strip()
 
 
 def main():
@@ -47,10 +63,10 @@ def main():
 
     if args.u:
         scheme, host, path = parse_url(args.u)
-        if scheme == 'https':
-            print(send_http_get_request(host, HTTPS_PORT, path))
-        else:
-            print(send_http_get_request(host, HTTP_PORT, path))
+        port = HTTPS_PORT if scheme == 'https' else HTTP_PORT
+
+        header, body = send_http_get_request(host, port, path)
+        print(parse_html_body(body))
     else:
         pass
 
