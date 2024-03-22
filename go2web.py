@@ -47,9 +47,7 @@ def send_http_get_request(host, port, path):
 
 def parse_html_body(html_body):
     soup = BeautifulSoup(html_body, 'html.parser')
-
-    body_text = soup.body.get_text(separator=' ')
-    body_text = re.sub(r'\s+', ' ', body_text)
+    body_text = soup.body.get_text(separator='\n\n', strip=True)
 
     return body_text.strip()
 
