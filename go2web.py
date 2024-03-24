@@ -7,7 +7,6 @@ import re
 
 HTTPS_PORT = 443
 HTTP_PORT = 80
-MAX_RESULTS = 10
 
 
 class SearchResult:
@@ -78,7 +77,8 @@ def parse_search_response(html_body):
     final_results = []
     index = 1
     results = soup.find_all('div', class_='egMi0 kCrYT')
-    while index <= 10:
+
+    while index <= len(results):
         link = results[index - 1].findChild('a')
         url = link['href']
 
