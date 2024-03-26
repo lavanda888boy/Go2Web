@@ -1,23 +1,14 @@
 import argparse
 from urllib.parse import urlparse, quote, parse_qs
 from bs4 import BeautifulSoup
+from tinydb import TinyDB, Query
 import socket
 import ssl
 import re
 
 HTTPS_PORT = 443
 HTTP_PORT = 80
-
-
-class SearchResult:
-
-    def __init__(self, index, description, link):
-        self.index = index
-        self.description = description
-        self.link = link
-
-    def to_string(self):
-        print(f"{self.index}. {self.description};\nAccess link: {self.link}\n\n")
+DB_NAME = 'cash.json'
 
 
 def parse_url(url):
@@ -89,7 +80,7 @@ def parse_search_response(html_body):
         desc_div = results[index - 1].findChild('div', class_='BNeawe vvjwJb AP7Wnd')
         desc = desc_div.get_text()
 
-        final_results.append(SearchResult(index, desc, valid_url))
+        final_results.append(f"{index}. {desc};\nAccess link: {valid_url}\n\n")
         index += 1
 
     return final_results
@@ -107,6 +98,8 @@ def google_search(terms):
 
 
 def main():
+    cashed_results = TinyDB(DB_NAME)
+
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', help='Make an HTTP request to the specified URL and print the response')
     parser.add_argument('-s', nargs='+', help='Make an HTTP request to search the term using your favorite search engine and print top 10 results')
@@ -117,13 +110,22 @@ def main():
         scheme, host, path = parse_url(args.u)
         port = HTTPS_PORT if scheme == 'https' else HTTP_PORT
 
-        header, body = send_http_get_request(host, port, path)
-        print(parse_html_body(body))
+        _, body = send_http_get_request(host, port, path)
+        result = parse_html_body(body)
+        cashed_results.insert({'type': 'browse', 'query': args.u, 'response': result})
+        print(result)
 
     elif args.s:
-        results = google_search(args.s)
-        for r in results:
-            r.to_string()
+        result = Query()
+        q = " ".join(args.s)
+        query_result = cashed_results.search(result.type == 'search' and result.query == q)
+        if len(query_result) != 0:
+            print(query_result[0]['response'])
+        else:
+            results = google_search(args.s)
+            grouped_result = "\n".join(results)
+            cashed_results.insert({'type': 'search', 'query': q, 'response': grouped_result})
+            print(grouped_result)
 
 
 if __name__ == "__main__":
