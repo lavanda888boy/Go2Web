@@ -98,7 +98,7 @@ def google_search(terms):
 
 
 def main():
-    cashed_results = TinyDB(DB_NAME)
+    cashed_results = TinyDB(DB_NAME, indent=4)
 
     parser = argparse.ArgumentParser()
     parser.add_argument('-u', help='Make an HTTP request to the specified URL and print the response')
@@ -106,19 +106,25 @@ def main():
 
     args = parser.parse_args()
 
+    result = Query()
     if args.u:
-        scheme, host, path = parse_url(args.u)
-        port = HTTPS_PORT if scheme == 'https' else HTTP_PORT
+        query_result = cashed_results.search(result.type == 'browse' and result.query == args.u)
+        
+        if len(query_result) != 0:
+            print(query_result[0]['response'])
+        else:
+            scheme, host, path = parse_url(args.u)
+            port = HTTPS_PORT if scheme == 'https' else HTTP_PORT
 
-        _, body = send_http_get_request(host, port, path)
-        result = parse_html_body(body)
-        cashed_results.insert({'type': 'browse', 'query': args.u, 'response': result})
-        print(result)
+            _, body = send_http_get_request(host, port, path)
+            result = parse_html_body(body)
+            cashed_results.insert({'type': 'browse', 'query': args.u, 'response': result})
+            print(result)
 
     elif args.s:
-        result = Query()
         q = " ".join(args.s)
         query_result = cashed_results.search(result.type == 'search' and result.query == q)
+
         if len(query_result) != 0:
             print(query_result[0]['response'])
         else:
