@@ -2,6 +2,7 @@ import argparse
 from urllib.parse import urlparse, quote, parse_qs
 from bs4 import BeautifulSoup
 from tinydb import TinyDB, Query
+import json
 import socket
 import ssl
 import re
@@ -116,8 +117,15 @@ def main():
             scheme, host, path = parse_url(args.u)
             port = HTTPS_PORT if scheme == 'https' else HTTP_PORT
 
-            _, body = send_http_get_request(host, port, path)
-            result = parse_html_body(body)
+            headers, body = send_http_get_request(host, port, path)
+            result = ''
+
+            if 'Content-Type: application/json' in headers:
+                parsed_json = json.loads(body)
+                result = json.dumps(parsed_json, indent=4)
+            else:
+                result = parse_html_body(body)
+            
             cashed_results.insert({'type': 'browse', 'query': args.u, 'response': result})
             print(result)
 
