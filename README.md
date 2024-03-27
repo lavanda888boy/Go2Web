@@ -22,3 +22,4 @@ In order to test the application it is necessary to perform several steps:
     ```
 
 # Demo
+![demo](https://github.com/lavanda888boy/Go2Web/assets/112694991/6a4a10bc-65d3-4b09-b7b8-3f22df757df5)
